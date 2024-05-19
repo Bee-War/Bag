@@ -1,71 +1,259 @@
-#include "product.h"
 #include <iostream>
-#include <string>
+#include <vector>
+#include "product.h"
+#include <sstream>
 
-int main()
-{
-    setlocale(LC_ALL, "Russian");
-    Bag backpack (0); // задаём начальные данные рюкзака
+using namespace std;
 
-    int cickle = 1;
-    while (cickle)
-    {
-        cout << "1- Изменить размер сумки \n2- Добавить продукт \n3- Узнать массу продуктов \n4- Забрать продукт \n5- Узнать количество продуктов в сумке\n6- Узнать кол-во испорченых продуктов \n7- Узнать сколько продуктов испортится при помещении нового \n8- Узнать температуру продуктов \n0- завершить программу\n:";
-        cin >> cickle;
+// Функция для преобразования строки в вектор чисел типа double
+vector<double> stringToDoubleArray(const string& inputString) {
+    vector<double> result;
+    stringstream ss(inputString);
+    double num;
+    string word;
 
-        switch (cickle)
-        {
-        case 1: // Изменить размер сумки
-        {
-            double tw = backpack.getCurrentWeight(); // контроль что бы размер не изменили на меньший чем продуктов в сумке
-            cout << "Введите размер сумки : ";
-            double newtw;
-            
-            // Обработка исключения на случай ввода не числа
-            while (!(cin >> newtw)) {
-                cout << "Ошибка! Введите число: ";
-                cin.clear(); // Сброс флагов ошибок
-                cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Очистка буфера ввода
+    try {
+        while (ss >> num) {
+            result.push_back(num);
+            // Пропускаем пробел после числа, если есть
+            if (ss.peek() == ' ') {
+                ss.ignore();
             }
-
-            backpack.BagWeight(newtw,tw);// указываем новый размер сумки
-            system("pause"); // удержание консоли для удобства чтения
-        }
-        break;
-
-        case 2: // Добавить продукт
-            backpack.addProduct();
-            backpack.StabilizathionHeat();
-            break;
-        case 3: // узнать массу всех продуктов
-            cout << "Масса всех продуктов : " << backpack.getCurrentWeight() << endl;
-            system("pause"); // удержание консоли для удобства чтения
-            
-            break;
-        case 4: // забрать продукт из сумки
-            backpack.DellProduct();
-            system("pause"); // удержание консоли для удобства чтения
-            break;
-        case 5:
-            cout << "Всего : " << backpack.getProductCount() <<" продуктов в сумке." << endl;
-            system("pause"); // удержание консоли для удобства чтения
-            break;
-        case 6:
-            cout << "Всего : " << backpack.countSpoiledProducts() << " испорченых продуктов в сумке." << endl;
-            system("pause"); // удержание консоли для удобства чтения
-            break;
-        case 7:
-            cout << "Всего : " << backpack.countWouldSpoilProducts() << " может быть испорчено при помещении данного в сумку." << endl;
-            system("pause"); // удержание консоли для удобства чтения
-            break;
-        case 8:
-            cout << "Температура продуктов : " << backpack.GetTemp() << endl;
-            system("pause"); // удержание консоли для удобства чтения
-            break;
-        default:
-            break;
         }
 
+        // Проверяем, что после числа не следует другой символ, кроме пробела
+        if (ss >> word) {
+            throw std::invalid_argument("Ошибка: некорректный формат числа.");
+        }
+
+        // Проверяем, были ли вообще введены числа
+        if (result.empty()) {
+            throw std::invalid_argument("Ошибка: введена строка без чисел.");
+        }
     }
-    return 0;
+    catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        result.clear(); // Очищаем вектор в случае исключения
+    }
+
+    return result;
+}
+
+Bag::Bag(double maxWeight) : maxWeight(maxWeight)
+{
+    vector<Product> products;
+}   
+
+void Bag::BagWeight(double Weight, double tw)
+{
+    if (Weight >= tw)
+        maxWeight = Weight;
+    else
+        cout << "Вес не изменён, так как сумка мала для продуктов";
+}
+
+double Bag::getCurrentWeight() { // рассчитываем общую массу в сумке
+    double totalWeight = 0.0;
+    for (const auto& prod : products) {
+        totalWeight += prod.getMass();
+    }
+    return totalWeight;
+}
+
+void Bag::addProduct() { // метод добавления продукта
+    
+        string name, str; // сохранение имени продукта и строки его данных
+        vector<double> data; // создадим вектор, для передачи данных
+        bool check = true; // проверка на корректность ввода
+        cout << "Введите наименование продукта:";
+        cin >> name;
+        cout << "Введите данные продукта в формате:\nмасса температура макс.темп мин.темп теплоёмкость\n";
+        cout << "Или введите -1 для выхода из раздела\n:";
+        cin.ignore(); // пропуск потока данных, что бы не захватывалась пустая строка
+        getline(cin, str); // ввод строки данных продукта
+        data = stringToDoubleArray(str); // разбиение строки и перевод в вектор формата double
+
+        while (check) // цикл для множества попыток ввода данных
+        {
+            if (data.size() == 0)
+            {
+                cout << "введены неккоректные данные, введите корректные данные снова, или введите -1, для выхода из раздела\n";
+                cout << "Введите данные продукта в формате:\n";
+                cout << "масса температура макс.темп мин.темп теплоёмкость\n:";
+                getline(cin, str); // ввод строки данных продукта
+                data = stringToDoubleArray(str); // разбиение строки и перевод в вектор формата double
+            }
+            else
+                if (data[0] != -1)
+                {
+                    if ((data[0] > 0) && (data[2] > data[3]) && (data[4] > 0) && (data[1] > data[3]) && (data[1] < data[2]) && (getCurrentWeight() + data[0] <= maxWeight))
+                    {
+                        check = false;
+                        Product eda(name, data[0], data[1], data[2], data[3], data[4]); // создание записи данных продукта
+                        products.push_back(eda); // запись данных продукта в вектор
+                        cout << "Продукт добавлен.\n";
+                    }
+                    else
+                    {
+                        if ((getCurrentWeight() + data[0]) > maxWeight) // проверка вместимости
+                        { 
+                            cout << "Сумка переполнена, продукт не помещен." << endl;
+                            cout << "Поместите продукт поменьше или измените размер сумки(Введите -1).\n";
+                            cout << "Введите данные продукта в формате:\n";
+                            cout << "масса температура макс.темп мин.темп теплоёмкость\n:";
+                            getline(cin, str); // ввод строки данных продукта
+                            data = stringToDoubleArray(str); // разбиение строки и перевод в вектор формата double
+                        }
+                        else
+                        {
+                            cout << "введены неккоректные данные, введите корректные данные снова, или введите -1, для выхода из раздела\n";
+                            cout << "Введите данные продукта в формате:\n";
+                            cout << "масса температура макс.темп мин.темп теплоёмкость\n:";
+                            getline(cin, str); // ввод строки данных продукта
+                            data = stringToDoubleArray(str); // разбиение строки и перевод в вектор формата double
+                        }
+                    }
+                }
+                else
+                    break;
+        }
+}      
+
+void Bag::DellProduct() { // метод удаления продукта
+    if (products.size() != 0)
+            {
+                int j = 0;
+                for (int i = 0; i < products.size(); i++) {
+                    cout << i + 1 << "-" << products[i].getName() << endl;
+                }
+                cout << "Введите номер продукта, который вы хотели бы забрать:" << endl;
+                cin >> j;
+                if (j > 0 && j < products.size() + 1)
+                {
+                    j = j - 1;
+                    string name = products[j].getName();
+                    products.erase(products.begin() + j);
+                    cout << "Продукт " << name << " убран из сумки. " << endl;
+                }
+                else
+                    cout << "Неверно набран номер...";
+            }
+            else
+                cout << "В рюкзаке нет продуктов\n";
+}
+
+int Bag::countSpoiledProducts() { // метод подсчёта испорченных продуктов в сумке
+    int count = 0;
+    for (const auto& prod : products) {
+        if (prod.getState() != "NORMAL") { // считаем сколько продуктов испорчено
+            count++;
+        }
+    }
+    return count;
+}
+
+int Bag::countWouldSpoilProducts() { // метод подсчёта сколько продуктов может испортиться при помещении нового
+    int count = 0; // счётчик испорченых продуктов
+
+    // стандартный ввод, вставил для удобства чтения, чуть изменил в 154 строке
+    string name, str; // сохранение имени продукта и строки его данных
+    vector<double> data; // создадим вектор, для передачи данных
+    bool check = true; // проверка на корректность ввода
+    cout << "Введите наименование продукта:";
+    cin >> name;
+    cout << "Введите данные продукта в формате:\nмасса температура макс.темп мин.темп теплоёмкость\n";
+    cout << "Или введите -1 для выхода из раздела\n:";
+    cin.ignore(); // пропуск потока данных, что бы не захватывалась пустая строка
+    getline(cin, str); // ввод строки данных продукта
+    data = stringToDoubleArray(str); // разбиение строки и перевод в вектор формата double
+
+    while (check) // цикл для множества попыток ввода данных
+    {
+        if (data[0] != -1)
+        {
+            if ((data[0] > 0) && (data[2] > data[3]) && (data[4] > 0) && (data[1] > data[3]) && (data[1] < data[2]) && (getCurrentWeight() + data[0] <= maxWeight))
+            {
+                check = false;
+            }
+            else
+            {
+                if ((getCurrentWeight() + data[0]) > maxWeight) // проверка вместимости
+                {
+                    cout << "Сумка переполнена, продукт не может быть помещен." << endl;
+                    cout << "Поместите продукт поменьше или измените размер сумки(Введите -1).\n";
+                    cout << "Введите данные продукта в формате:\n";
+                    cout << "масса температура макс.темп мин.темп теплоёмкость\n:";
+                    getline(cin, str); // ввод строки данных продукта
+                    data = stringToDoubleArray(str); // разбиение строки и перевод в вектор формата double
+                }
+                else
+                {
+                    cout << "введены неккоректные данные, введите корректные данные снова, или введите -1, для выхода из раздела\n";
+                    cout << "Введите данные продукта в формате:\n";
+                    cout << "масса температура макс.темп мин.темп теплоёмкость\n:";
+                    getline(cin, str); // ввод строки данных продукта
+                    data = stringToDoubleArray(str); // разбиение строки и перевод в вектор формата double
+                }
+            }
+        }
+        else
+            break;
+    }
+
+    if (!check)
+    {
+        double TotalHeat = data[1] * data[0] * data[4]; // тепло добавляемого продукта
+        double TotalCapacity = data[4] * data[0]; // теплоёмкость добавляемого продукта
+        for (int i = 0; i < products.size(); i++) {
+            TotalHeat += products[i].getTemperature() * products[i].getHeatCapacity() * products[i].getMass(); // сумируем общее кол-во тепла
+            TotalCapacity += products[i].getHeatCapacity() * products[i].getMass(); // сумируем общее кол-во теплоёмкости
+        }
+        for (int i = 0; i < products.size(); i++) {
+            double prodQ = products[i].getTemperature() * products[i].getMass() * products[i].getHeatCapacity(); // тепло до обмена
+            double Q = ((TotalHeat) * (products[i].getHeatCapacity() * products[i].getMass() / TotalCapacity)); // сколько должно быть передано тепла 
+            string state = "";
+
+            if (prodQ > Q) // если продукт имеет больше тепла, чем должен после теплообмена
+                state = products[i].getFinalStateAfterHeatTransfer(Q - prodQ); // забираем тепло
+            else
+                state = products[i].getFinalStateAfterHeatTransfer(Q); // передаём тепло
+
+            if (state != "NORMAL")
+                count++;
+        }
+        return count;
+    }
+    else
+        return 0;
+}
+
+size_t Bag::getProductCount() { // метод получения количества продуктов в сумке
+    return products.size();
+}
+
+void Bag::StabilizathionHeat() // метод стабилизации тепла
+{
+    double TotalHeat = 0, TotalCapacity = 0;
+    for (int i = 0; i < products.size(); i++) {
+        TotalHeat += products[i].getTemperature() * products[i].getHeatCapacity() * products[i].getMass(); // сумируем общее кол-во тепла
+        TotalCapacity += products[i].getHeatCapacity() * products[i].getMass(); // сумируем общее кол-во теплоёмкости
+    }
+    for (int i = 0; i < products.size(); i++) {
+        double prodQ = products[i].getTemperature() * products[i].getMass() * products[i].getHeatCapacity(); // тепло до обмена
+        double Q = ((TotalHeat) * (products[i].getHeatCapacity() * products[i].getMass() / TotalCapacity)); // сколько должно быть тепла после обмена
+
+       // if (prodQ > Q) // если продукт имеет больше тепла, чем должен после теплообмена     
+            products[i].transferHeat(Q - prodQ); // забираем тепло
+       // else
+       //     products[i].transferHeat(prodQ - Q); // передаём тепло
+    }
+};
+
+string Bag::GetTemp()
+{
+    if (products.size() != 0)
+        return to_string(products[0].getTemperature());
+    else
+        return "В рюкзаке нет продуктов\n";
+
 }
