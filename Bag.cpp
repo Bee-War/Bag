@@ -20,7 +20,13 @@ int main()
             double tw = backpack.getCurrentWeight(); // контроль что бы размер не изменили на меньший чем продуктов в сумке
             cout << "Введите размер сумки : ";
             double newtw;
-            cin >> newtw;
+            
+            // Обработка исключения на случай ввода не числа
+            while (!(cin >> newtw)) {
+                cout << "Ошибка! Введите число: ";
+                cin.clear(); // Сброс флагов ошибок
+                cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Очистка буфера ввода
+            }
 
             backpack.BagWeight(newtw,tw);// указываем новый размер сумки
             system("pause"); // удержание консоли для удобства чтения
